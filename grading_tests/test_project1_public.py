@@ -18,13 +18,16 @@ FUNCTIONS = [
 MAX_ITERS = 2
 GAMMA = 0.1
 
+
 @pytest.fixture()
 def initial_w():
     return np.array([[0.5], [1.0]])
 
+
 @pytest.fixture()
 def y():
     return np.array([[0.1], [0.3], [0.5]])
+
 
 @pytest.fixture()
 def tx():
