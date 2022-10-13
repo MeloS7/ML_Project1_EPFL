@@ -1,7 +1,7 @@
 import numpy as np
 
-from helpers import compute_loss
-from helpers import compute_gradient
+from helpers import compute_loss, compute_loss_logistic
+from helpers import compute_gradient, compute_hessian, compute_gradient_logistic
 
 
 def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
@@ -41,6 +41,7 @@ def least_squares(y, tx):
     b = tx.T.dot(y)
     w = np.linalg.solve(a, b)
     loss = compute_loss(y, tx, w)
+
     return w, loss
 
 
@@ -51,16 +52,27 @@ def ridge_regression(y, tx, lambda_):
     b = tx.T.dot(y)
     w = np.linalg.solve(a, b)
     loss = compute_loss(y, tx, w)
+
     return w, loss
 
 
-def logistic_regression(y, tx, initial_w, max_iter, gamma):
+def logistic_regression(y, tx, initial_w, max_iters, gamma):
     '''5
     '''
-    pass
+    w = np.array(initial_w, dtype="float")
+
+    for i in range(max_iters):
+        grad = compute_gradient_logistic(y, tx, w)
+        w -= gamma * grad
+    loss = compute_loss_logistic(y, tx, w)
+    print(w)
+    print(loss)
+    return w, loss
 
 
-def reg_logisitic_regression(y, tx, initial_w, max_iter, gamma):
-    '''5
+
+def reg_logisitic_regression(y, tx, initial_w, max_iters, gamma):
+    '''
+    6666
     '''
     pass
