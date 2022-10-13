@@ -1,22 +1,44 @@
 from cgi import test
 import numpy as np
 
+def label_encoder(label):
+    """encode string labels to numerical values"""
+    if b"b" in label:
+        return 0
+    elif b"s" in label:
+        return 1
+    else:
+        return None
+
+def label_decoder(label):
+    """decode numerical labels to strings"""
+    if label == 0:
+        return 'b'
+    else:
+        return 's'
+
 
 def load_data(path_dataset, sub_sample=True):
     """Load data"""
     data = np.genfromtxt(
-        path_dataset, delimiter=",", skip_header=1, usecols=[i for i in range(2, 32)]
+        path_dataset, delimiter=",", skip_header=1, usecols=list(range(2, 32))
     )
-    data_DER = data[:, :13]
+    print("data shape:", data.shape)
+    print(data[:2])
+    data_DER = data[:, 1:13]
     data_PRI = data[:, 13:]
-    prediction = np.genfromtxt(path_dataset, delimiter=",", skip_header=1, usecols=[1])
+    labels = np.genfromtxt(
+        path_dataset, delimiter=",", skip_header=1, usecols=[1],
+        converters={1: label_encoder}
+    )
 
     # sub-sample
     if sub_sample:
         data_DER = data_DER[::50]
         data_PRI = data_PRI[::50]
+        labels = labels[::50]
 
-    return data_DER, data_PRI, prediction
+    return data_DER, data_PRI, labels
 
 
 def calculate_mse(e):
