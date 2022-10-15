@@ -23,8 +23,6 @@ def load_data(path_dataset, sub_sample=True):
     data = np.genfromtxt(
         path_dataset, delimiter=",", skip_header=1, usecols=list(range(2, 32))
     )
-    print("data shape:", data.shape)
-    print(data[:2])
     data_DER = data[:, 1:13]
     data_PRI = data[:, 13:]
     labels = np.genfromtxt(
@@ -110,33 +108,68 @@ def compute_hessian(y, tx, w):
     r = np.multiply(pred, (1-pred))
     return tx.T.dot(r).dot(tx)
 
-def cross_validation(y, x, k, k_fold, seed=42):
-    '''K-fold Cross Validation
-    
-    Args:
-        y: shape=(N, 1)
-        x: shape=(N, D)
-        k: k-th subgroup as test data
-        k_fold: divide data by k_fold groups
-        seed: random seed, 42 by default
 
-    Return:
-        training data and test data
-
+def train_test_split(y, x, ratio, seed=42):
     '''
+    Split the dataset into training and test sets.
+
+    Args:
+        y: numpy.ndarray of shape (N,1)
+        x: numpy.ndarray of shape (N,D)
+        ratio: proportion of data used for training
+        seed: the random seed
+
+    Returns:
+        x_tr: numpy.ndarray containing the train data.
+        x_te: numpy.ndarray containing the test data.
+        y_tr: numpy.ndarray containing the train labels.
+        y_te: numpy.ndarray containing the test labels.
+    '''
+    # Set seed
+    np.random.seed(seed)
+
+    indices = np.random.permutation(len(y))
+    split = int(np.floor(ratio * len(y)))
+    idx_tr = indices[:split]
+    idx_te = indices[split:]
+
+    return x[idx_tr], x[idx_te], y[idx_tr], y[idx_te]
+
+
+def kfold_split(y, x, k_fold, seed=42):
+    '''
+    Generate data for train and test. 
+    The daatset is spliit into k_fold subsamples. In the i-th value genarated,
+    test set consists of data in the i-th subsample, training set consists of
+    the k-1 subsamples left. 
+
+    Args:
+        y: numpy.ndarray of shape (N,1)
+        x: numpy.ndarray of shape (N,D)
+        k_fold: fold number
+        seed: the random seed
+    
+    Yields:
+        x_train: training data x for that split
+        x_test:  training labels y for that split
+        y_train: test data x for that split
+        y_test:  test lqbels y for that split
+    '''
+    # Set seed
+    np.random.seed(seed)
+
     # Build k indices for k-fold
     num_row = y.shape[0]
     interval = int(num_row / k_fold)
-    np.random.seed(seed)
     indices = np.random.permutation(num_row)
-    k_indices = [indices[k * interval: (k + 1) * interval]
-                 for k in range(k_fold)]
-
+    k_indices = np.array([indices[k * interval: (k + 1) * interval]
+                 for k in range(k_fold)])
+    
     # Split data by k_indices and k
-    test_x, test_y = x[k_indices[k]], y[k_indices[k]]
-    train_x = x[k_indices[np.arange(k_indices.shape[0]) != k].reshape(-1)]
-    train_y = y[k_indices[np.arange(k_indices.shape[0]) != k].reshape(-1)]
+    for k in range(k_fold):
+        x_train = x[k_indices[np.arange(k_indices.shape[0]) != k].reshape(-1)]
+        y_train = y[k_indices[np.arange(k_indices.shape[0]) != k].reshape(-1)]
+        x_test, y_test = x[k_indices[k]], y[k_indices[k]]
 
-    return train_x, test_x, train_y, test_y
-
+        yield x_train, x_test, y_train, y_test
 
