@@ -4,9 +4,21 @@ from helpers import compute_loss, compute_loss_logistic
 from helpers import compute_gradient, compute_hessian, compute_gradient_logistic
 
 
-def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
+def least_squares_GD(y, tx, initial_w, max_iters, gamma):
     '''
-    1
+    Perform linear regression using gradient descent.
+    Use mean squared error as the loss function.
+
+    Args:
+        y: numpy.ndarray of shape (N,)
+        tx: numpy.ndarray of shape (N,D)
+        initial_w: initial value of weights
+        max_iter: number of iterations
+        gamma: learning rate, step size
+    
+    Returns:
+        w: numpy.ndarray, weights after all iterations
+        loss: correspondant mse error
     '''
     w = np.array(initial_w, dtype="float")
 
@@ -18,9 +30,22 @@ def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
     return w, loss
 
 
-def mean_squared_error_sgd(y, tx, initial_w, max_iters, gamma):
+def least_squares_SGD(y, tx, initial_w, max_iters, gamma):
     '''
-    2
+    Perorm linear regression using stochastic gradient descent. 
+    Every iteration samples randomly one datapoint. 
+    Use mean squared error as the loss function.
+    
+    Args:
+        y: numpy.ndarray of shape (N,)
+        tx: numpy.ndarray of shape (N,D)
+        initial_w: initial value of weights
+        max_iter: number of iterations
+        gamma: learning rate, step size
+    
+    Returns:
+        w: numpy.ndarray, weights after all iterations
+        loss: correspondant mse error
     '''
     w = np.array(initial_w, dtype="float")
 
@@ -35,7 +60,17 @@ def mean_squared_error_sgd(y, tx, initial_w, max_iters, gamma):
 
 
 def least_squares(y, tx):
-    '''3
+    '''
+    Perform least square regression using normal equation. 
+    Use mse as loss function. 
+    
+    Args:
+        y: numpy.ndarray of shape (N,)
+        tx: numpy.ndarray of shape (N,D)
+
+    Returns:
+        w: numpy.ndarray, optimal weights
+        loss: correspondant mse error
     '''
     a = tx.T.dot(tx)
     b = tx.T.dot(y)
@@ -46,7 +81,18 @@ def least_squares(y, tx):
 
 
 def ridge_regression(y, tx, lambda_):
-    '''4
+    '''
+    Perform ridge regression using normal equation.
+    Use mse as loss function. 
+
+    Args:
+        y: numpy.ndarray of shape (N,)
+        tx: numpy.ndarray of shape (N,D)
+        lambda_: coefficient of the penalty term
+
+    Returns:
+        w: numpy.ndarray, optimal weights
+        loss: correspondant mse error
     '''
     a = tx.T.dot(tx) + 2 * len(y) * lambda_ * np.eye(tx.shape[1])
     b = tx.T.dot(y)
