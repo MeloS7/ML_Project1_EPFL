@@ -4,7 +4,7 @@ from helpers import compute_loss, compute_loss_logistic
 from helpers import compute_gradient, compute_hessian, compute_gradient_logistic
 
 
-def least_squares_GD(y, tx, initial_w, max_iters, gamma):
+def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
     '''
     Perform linear regression using gradient descent.
     Use mean squared error as the loss function.
@@ -30,7 +30,7 @@ def least_squares_GD(y, tx, initial_w, max_iters, gamma):
     return w, loss
 
 
-def least_squares_SGD(y, tx, initial_w, max_iters, gamma):
+def mean_squared_error_sgd(y, tx, initial_w, max_iters, gamma):
     '''
     Perorm linear regression using stochastic gradient descent. 
     Every iteration samples randomly one datapoint. 
