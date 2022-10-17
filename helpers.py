@@ -1,42 +1,73 @@
 from cgi import test
+import csv
 import numpy as np
 
-def label_encoder(label):
-    """encode string labels to numerical values"""
-    if b"b" in label:
-        return 0
-    elif b"s" in label:
-        return 1
-    else:
-        return None
-
-def label_decoder(label):
-    """decode numerical labels to strings"""
-    if label == 0:
-        return 'b'
-    else:
-        return 's'
 
 
-def load_data(path_dataset, sub_sample=True):
-    """Load data"""
-    data = np.genfromtxt(
-        path_dataset, delimiter=",", skip_header=1, usecols=list(range(2, 32))
-    )
-    data_DER = data[:, 1:13]
-    data_PRI = data[:, 13:]
-    labels = np.genfromtxt(
-        path_dataset, delimiter=",", skip_header=1, usecols=[1],
-        converters={1: label_encoder}
-    )
+
+def load_csv_data(data_path, sub_sample=False):
+    """Loads data and returns y (class labels), tX (features) and ids (event ids)"""
+    y = np.genfromtxt(data_path, delimiter=",", skip_header=1, dtype=str, usecols=1)
+    x = np.genfromtxt(data_path, delimiter=",", skip_header=1)
+    ids = x[:, 0].astype(np.int)
+    input_data = x[:, 2:]
+
+    # convert class labels from strings to binary (-1,1)
+    yb = np.ones(len(y))
+    yb[np.where(y == "b")] = -1
 
     # sub-sample
     if sub_sample:
-        data_DER = data_DER[::50]
-        data_PRI = data_PRI[::50]
-        labels = labels[::50]
+        yb = yb[::50]
+        input_data = input_data[::50]
+        ids = ids[::50]
 
-    return data_DER, data_PRI, labels
+    return yb, input_data, ids
+
+
+def create_csv_submission(ids, y_pred, name):
+    """
+    Creates an output file in .csv format for submission to Kaggle or AIcrowd
+    Arguments: ids (event ids associated with each prediction)
+               y_pred (predicted class labels)
+               name (string name of .csv output file to be created)
+    """
+    with open(name, "w") as csvfile:
+        fieldnames = ["Id", "Prediction"]
+        writer = csv.DictWriter(csvfile, delimiter=",", fieldnames=fieldnames)
+        writer.writeheader()
+        for r1, r2 in zip(ids, y_pred):
+            writer.writerow({"Id": int(r1), "Prediction": int(r2)})
+
+
+def make_prediction(vals):
+    '''
+    Convert outputs of linear regressions to their classes. 
+    Positive values are assigned to 1 and negative to -1.
+
+    Args:
+        vals: numpy.ndarray of shape (N,)
+    
+    Returns:
+        pred: numpy.ndarray of shape (N,)
+    '''
+    pred = np.ones(vals.shape)
+    pred[vals < 0] = -1
+    return pred
+
+
+def accuracy_score(ys, pred):
+    '''
+    Calculate the accuracy of prediction given true labels
+
+    Args:
+        pred: numpy.ndarray of shape (N,), predictions
+        ys: numpy.ndarray of shape (N,), true labels
+
+    Returns:
+        acc: float, accuracy
+    '''
+    return np.mean(ys == pred)
 
 
 def calculate_mse(e):
@@ -66,26 +97,6 @@ def compute_gradient(y, tx, w):
     err = y - tx.dot(w)
     grad = -tx.T.dot(err) / len(err)
     return grad, err
-
-
-def gradient_descent(y, tx, initial_w, max_iters, gamma):
-    """Gradient descent algorithm."""
-    # Define parameters to store w and loss
-    ws = [initial_w]
-    losses = []
-    w = initial_w
-    for n_iter in range(max_iters):
-        # compute loss, gradient
-        grad, err = compute_gradient(y, tx, w)
-        loss = calculate_mse(err)
-        # gradient w by descent update
-        w = w - gamma * grad
-        # store w and loss
-        ws.append(w)
-        losses.append(loss)
-        # print("Gradient Descent({bi}/{ti}): loss={l}, w0={w0}, w1={w1}".format(
-        #      bi=n_iter, ti=max_iters - 1, l=loss, w0=w[0], w1=w[1]))
-    return ws, losses
 
 
 def sigmoid(t):
