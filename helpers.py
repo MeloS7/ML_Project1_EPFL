@@ -51,8 +51,9 @@ def make_prediction(vals):
     Returns:
         pred: numpy.ndarray of shape (N,)
     '''
-    pred = np.ones(vals.shape)
-    pred[vals < 0] = -1
+    # pred = np.ones(vals.shape)
+    # pred[vals < 0] = -1
+    pred = np.sign(vals)
     return pred
 
 
@@ -182,5 +183,5 @@ def kfold_split(y, x, k_fold, seed=42):
         y_train = y[k_indices[np.arange(k_indices.shape[0]) != k].reshape(-1)]
         x_test, y_test = x[k_indices[k]], y[k_indices[k]]
 
-        yield x_train, x_test, y_train, y_test
+    return x_train, x_test, y_train, y_test
 

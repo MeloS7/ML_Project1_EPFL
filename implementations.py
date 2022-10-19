@@ -12,7 +12,7 @@ def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
     Args:
         y: numpy.ndarray of shape (N,)
         tx: numpy.ndarray of shape (N,D)
-        initial_w: initial value of weights
+        initial_w: initial value of weights (D,)
         max_iter: number of iterations
         gamma: learning rate, step size
     
