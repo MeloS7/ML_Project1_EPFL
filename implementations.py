@@ -23,7 +23,7 @@ def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
     w = np.array(initial_w, dtype="float")
 
     for i in range(max_iters):
-        gradient, _ = compute_gradient(y, tx, w)
+        gradient = compute_gradient(y, tx, w)
         w -= gamma * gradient
     loss = compute_loss(y, tx, w)
 
@@ -33,8 +33,9 @@ def mean_squared_error_gd(y, tx, initial_w, max_iters, gamma):
 def mean_squared_error_sgd(y, tx, initial_w, max_iters, gamma):
     '''
     Perorm linear regression using stochastic gradient descent. 
-    Every iteration samples randomly one datapoint. 
-    Use mean squared error as the loss function.
+    Every iteration consists of one epoch over the whole dataset. 
+    If N is the number of datapoint in the daatset, the weights get update 
+    N time per iteration.
     
     Args:
         y: numpy.ndarray of shape (N,)
@@ -50,10 +51,9 @@ def mean_squared_error_sgd(y, tx, initial_w, max_iters, gamma):
     w = np.array(initial_w, dtype="float")
 
     for i in range(max_iters):
-        # pick a random sample from data set
-        idx = np.random.randint(len(y), size=1)
-        gradient, _ = compute_gradient(y[idx], tx[idx], w)
-        w -= gamma * gradient
+        for idx in range(len(y)):
+            gradient = compute_gradient(y[idx:idx+1], tx[idx:idx+1], w)
+            w -= gamma * gradient
     loss = compute_loss(y, tx, w)
 
     return w, loss
@@ -103,7 +103,19 @@ def ridge_regression(y, tx, lambda_):
 
 
 def logistic_regression(y, tx, initial_w, max_iters, gamma):
-    '''5
+    '''
+    Perform logistic regression using gradient descent.
+
+    Args:
+        y: numpy.ndarray of shape (N,)
+        tx: numpy.ndarray of shape(N,D)
+        initial_w: numpy.ndarray of shape (D,)
+        max_iters: number of iterations
+        gamma: learning rate, step size
+
+    Returns:
+        w: weights at the end of all iterations
+        loss: corresponding logistic regression loss
     '''
     w = np.array(initial_w, dtype="float")
 
@@ -111,14 +123,33 @@ def logistic_regression(y, tx, initial_w, max_iters, gamma):
         grad = compute_gradient_logistic(y, tx, w)
         w -= gamma * grad
     loss = compute_loss_logistic(y, tx, w)
-    print(w)
-    print(loss)
+
     return w, loss
 
 
 
-def reg_logisitic_regression(y, tx, initial_w, max_iters, gamma):
+def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
     '''
-    6666
+    Perform regularized logistic regression with gradient descent.
+    Loss is contains a penalty term scaled by lambda_.
+
+    Args:
+        y: numpy.ndarray of shape (N,)
+        tx: numpy.ndarray of shape(N,D)
+        lambda_: coefficient of the penalty term
+        initial_w: numpy.ndarray of shape (D,)
+        max_iters: number of iterations
+        gamma: learning rate, step size
+    
+    Returns:
+        w: weights at the end of all iterations
+        loss: corresponding logistic regression loss
     '''
-    pass
+    w = np.array(initial_w, dtype="float")
+
+    for i in range(max_iters):
+        grad = compute_gradient_logistic(y, tx, w) + 2*lambda_ * w
+        w -= gamma * grad
+    loss = compute_loss_logistic(y, tx, w)
+
+    return w, loss
