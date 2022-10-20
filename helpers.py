@@ -32,7 +32,7 @@ def create_csv_submission(ids, y_pred, name):
                y_pred (predicted class labels)
                name (string name of .csv output file to be created)
     """
-    with open(name, "w") as csvfile:
+    with open(name, "w", newline='') as csvfile:
         fieldnames = ["Id", "Prediction"]
         writer = csv.DictWriter(csvfile, delimiter=",", fieldnames=fieldnames)
         writer.writeheader()
@@ -40,19 +40,30 @@ def create_csv_submission(ids, y_pred, name):
             writer.writerow({"Id": int(r1), "Prediction": int(r2)})
 
 
-def make_prediction(vals):
+def make_prediction(vals, logistic=False, zero_one=False):
     '''
     Convert outputs of linear regressions to their classes. 
-    Positive values are assigned to 1 and negative to -1.
+    By default, negative values are assigned to -1 and positive to 1.
+    If zero_one=True, respectively to 0 and 1.
+    If logistic=True, boundary of two classes is 0.5 instead of 0.
 
     Args:
         vals: numpy.ndarray of shape (N,)
+        logistic: bool, if true, the separating boundary is 0.5 insad of 0.
+        zero_one: bool, if True return in set {0,1}> By default in {-1,1}
     
     Returns:
         pred: numpy.ndarray of shape (N,)
     '''
+    bound = 0
+    if logistic:
+        bound = 0.5
+
     pred = np.ones(vals.shape)
-    pred[vals < 0] = -1
+    if zero_one:
+        pred[vals < bound] = 0
+    else:
+        pred[vals < bound] = -1
     return pred
 
 
@@ -96,7 +107,7 @@ def compute_gradient(y, tx, w):
     """Compute the gradient."""
     err = y - tx.dot(w)
     grad = -tx.T.dot(err) / len(err)
-    return grad, err
+    return grad
 
 
 def sigmoid(t):
@@ -106,10 +117,6 @@ def compute_gradient_logistic(y, tx, w):
     return tx.T.dot(sigmoid(tx.dot(w))-y)/len(y)
 
 def compute_loss_logistic(y, tx, w):
-    # pred = sigmoid(tx.dot(w))
-    # loss = y.T.dot(np.log(pred)) + (1 - y).T.dot(np.log(1 - pred))
-    # return np.squeeze(- loss).item()
-    sig_xw = sigmoid(tx.dot(w))
     loss = np.sum(np.log(1+np.exp(tx.dot(w))) - y*tx.dot(w))/len(y)
     return loss
 
