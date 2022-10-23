@@ -152,5 +152,4 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
         w -= gamma * grad
     loss = compute_loss_logistic(y, tx, w) + lambda_ * np.sum(w**2)
 
-    print(f"w: {w} and loss: {loss}")
     return w, loss

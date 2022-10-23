@@ -3,164 +3,90 @@ import numpy as np
 
 class Preprocessor:
     def __init__(self):
-        self.mean = None
-        self.std = None
-        self.apply_mapping = False
-    
-    def remove_outlier(self, labels, features):
-        '''
-        Remove outliers (samples containing feature -999).
+        self.mein = None
+        self.max = None
+        self.poly_degree = 1
 
-        Args:
-            features: training features
-            labels: corresponding targets
-        
-        Returns:
-            feaures and labels with outlier rows dropped.
-        '''
-        non_out_idx = (features == -999).sum(axis=1) == 0
-        features = features[non_out_idx]
-        labels = labels[non_out_idx]
 
-        return features, labels
+    def process_train(self, X, poly_degree=3):
+        self.poly_degree = poly_degree
 
-    def process_train(self, X, apply_mapping=False):
-        '''
-        Preprocess X and retain mean and std of every feature.
-        These statistics are stored for further normolization on the test set. 
-        Samples containing a feature value equal to -999 are considered 
-        outliers and will be removed before all calculation. 
+        X = self._remove_outlier_features(X)
+        X = self._map_features(X)
 
-        Args:
-            X: numpy.ndarray of shape (N,D) training features
-            apply_apping: whether apply mapping on skewed-distribution features
+        self.min = X.min(axis=0)
+        self.max = X.max(axis=0)
+        X = (X - self.min) / (self.max - self.min)
 
-        Returns:
-            X: numpy.ndarray of shape (N,D')
-                features after preprocess, bias term included. 
-        '''
-        apply_mapping = False # TODO: problem in mapping function when dealing with test data
-        self.apply_mapping = apply_mapping
-
-        if apply_mapping:
-            X = self._map_features(X)
-
-        self.mean = X.mean(axis=0)
-        self.std = X.std(axis=0)
+        if poly_degree > 1:
+            X = self._build_poly(X, poly_degree)
 
         N = X.shape[0]
-        X = (X - self.mean) / self.std
         X = np.hstack([np.ones((N,1)), X])
 
         return X
-    
+
     def process_test(self, X):
+        X = self._remove_outlier_features()
+        X = self._map_features(X)
+
+        X = (X - self.min) / (self.max - self.min)
+
+        if self.poly_degree > 1:
+            X = self._build_poly(X, self.poly_degree)
+
+        N = X.shape[0]
+        X = np.hstack([np.ones((N,1)), X])
+
+        return X
+
+    
+    def _remove_outlier_features(self, features):
+        anormal_cols = [0,4,5,6,12,23,24,25,26,27,28]
+        return np.delete(features, anormal_cols, axis=1)
+
+
+    def _build_poly(self, features, degree):
         '''
-        Preprocess the features. 
-        The process_train function should have already been executed. 
+        Build polynomial features up to degree specified. 
+        Polynomial term of degree 0 (constant 1) is omitted.
 
         Args:
-            X: numpy.ndarray of shape (N,D), features to preprocess
+            features: numpy.ndarray of shape (N,D), D is number of fetures
+            degree: maximum degree to build
         
         Returns:
-            X: numpy.ndarray of shape (N,D')
-                features after preprocess, bias term included. 
+            polys: numpy.ndarray of shape (N, degree*D), features with
+                polynomials concatenated at the end.
         '''
-        N = X.shape[0]
+        assert degree > 0
+        N,D = features.shape
+        polys = np.zeros((N, degree*D))
 
-        if self.apply_mapping:
-            X = self._map_features(X)
-
-        X = (X - self.mean) / self.std
-        X = np.hstack([np.ones((N,1)), X])
+        polys[:,:D] = features
+        for i in range(1,degree):
+            polys[:, i*D : (i+1)*D] = polys[:, (i-1)*D : i*D] * features
         
-        return X
+        return polys
+
 
     def _map_features(sef, features):
-        # TODO: NOT to use, not compatible with `remove_outlier`
-
-        features = np.copy(features) # TODO: for debugging, to be removed 
-        N, D = features.shape
 
         # defines mappings for each column
-        mappings = [lambda x:x for _ in range(30)]
-
+        mappings = [lambda x:x for _ in range(features.shape[1])]
+        mappings[0] = lambda x: np.log(x+1)
         mappings[1] = lambda x: np.log(x+1)
         mappings[2] = lambda x: np.log(x+1)
-        mappings[3] = lambda x: np.log(x+1)
-        mappings[4] = lambda x: np.where(x != -999, x, 0) # can be removed: either -999 or in range [0,10)
-        mappings[5] = lambda x: np.where(x != -999, np.log(x), 0) # too many missing values (==-999)
-        mappings[6] = lambda x: np.where(x != -999, x, 0) # too many missing data, 70% of samples have same value as col 4, strange in test set TODO
-        mappings[8] = lambda x: np.log(x+1)
-        mappings[9] = lambda x: np.log(x+1)
-        mappings[10] = lambda x: np.log(x+1)
-        mappings[12] = lambda x: np.where(x != -999, x, 0) # too many missing data, 70% of samples have same value as col 4
-        mappings[13] = lambda x: np.log(np.log(col+1)+1)
-        mappings[16] = lambda x: np.log(np.log(col+1)+1)
-        mappings[19] = lambda x: np.log(x+1)
-        mappings[21] = lambda x: np.log(x+1)
-        mappings[23] = lambda x: np.where(x != -999, np.log(x), 0) # too many missing values, (==-999)
-        mappings[24] = lambda x: np.where(x != -999, x, 0)  # too many missing values, (==-999)
-        mappings[25] = lambda x: np.where(x != -999, x, 0)
-        mappings[26] = lambda x: np.where(x != -999, np.log(x), 0)
-        mappings[27] = lambda x: np.where(x != -999, x, 0)
-        mappings[28] = lambda x: np.where(x != -999, x, 0)
-        mappings[29] = lambda x: np.log(x+1)
+        mappings[4] = lambda x: np.log(x+1)
+        mappings[5] = lambda x: np.log(x+1)
+        mappings[6] = lambda x: np.log(x+1)
+        mappings[8] = lambda x: np.log(np.log(x+1)+1)
+        mappings[11] = lambda x: np.log(np.log(x+1)+1)
+        mappings[14] = lambda x: np.log(x+1)
+        mappings[16] = lambda x: np.log(x+1)
+        mappings[18] = lambda x: np.log(x+1)
 
         for col, mapping in enumerate(mappings):
             features[:,col] = mapping(features[:,col])
 
         return features
-
-
-def preprocess(features):
-    N, D = features.shape
-
-    # features with anormal values (-999)
-    anormal_f_col = np.argwhere((features == -999).sum(axis=0) > 0)
-    anormal_detect = np.zeros((N, len(anormal_f_col)))
-    for i,col in enumerate(anormal_f_col):
-        anormal_detect[:,i] = (features[:,col] == -999).astype(int).reshape((N,))
-
-    # defines mappings for each column
-    mappings = [lambda x:x for _ in range(30)]
-
-    mappings[1] = lambda x: np.log(x+1)
-    mappings[2] = lambda x: np.log(x+1)
-    mappings[3] = lambda x: np.log(x+1)
-    mappings[4] = lambda x: np.where(x != -999, x, 0) # can be removed: either -999 or in range [0,10)
-    mappings[5] = lambda x: np.where(x != -999, np.log(x), 0) # too many missing values (==-999)
-    mappings[6] = lambda x: np.where(x != -999, x, 0) # too many missing data, 70% of samples have same value as col 4, strange in test set TODO
-    mappings[8] = lambda x: np.log(x+1)
-    mappings[9] = lambda x: np.log(x+1)
-    mappings[10] = lambda x: np.log(x+1)
-    mappings[12] = lambda x: np.where(x != -999, x, 0) # too many missing data, 70% of samples have same value as col 4
-    mappings[13] = lambda x: np.log(np.log(col+1)+1)
-    mappings[16] = lambda x: np.log(np.log(col+1)+1)
-    mappings[19] = lambda x: np.log(x+1)
-    mappings[21] = lambda x: np.log(x+1)
-    mappings[23] = lambda x: np.where(x != -999, np.log(x), 0) # too many missing values, (==-999)
-    mappings[24] = lambda x: np.where(x != -999, x, 0)  # too many missing values, (==-999)
-    mappings[25] = lambda x: np.where(x != -999, x, 0)
-    mappings[26] = lambda x: np.where(x != -999, np.log(x), 0)
-    mappings[27] = lambda x: np.where(x != -999, x, 0)
-    mappings[28] = lambda x: np.where(x != -999, x, 0)
-    mappings[29] = lambda x: np.log(x+1)
-
-    for col, mapping in enumerate(mappings):
-        features[:,col] = mapping(features[:,col])
-    print(np.isnan(features).sum())
-
-    # combine all_features
-    features = np.hstack([features, anormal_detect])
-    print(np.isnan(features).sum())
-
-    # normalize data
-    features_mean = features.mean(axis=0)
-    features_std = features.std(axis=0)
-    features = (features - features_mean) / (features_std + 1e-8)
-
-    # add bias term
-    features = np.hstack([np.ones((N,1)), features])
-
-    return features
