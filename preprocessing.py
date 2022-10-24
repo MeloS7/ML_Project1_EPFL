@@ -3,16 +3,26 @@ import numpy as np
 
 class Preprocessor:
     def __init__(self):
-        self.mein = None
+        self.min = None
         self.max = None
+        self.min_ab = -999
+        self.max_ab = None
+        self.all_features = True
+        self.mapping = True
         self.poly_degree = 1
 
 
-    def process_train(self, X, poly_degree=3):
+    def process_train(self, X, all_features=True, mapping=True, poly_degree=3):
         self.poly_degree = poly_degree
+        self.mapping = mapping
+        self.all_features = all_features
 
-        X = self._remove_outlier_features(X)
-        X = self._map_features(X)
+        X, abnorms = self._remove_abnormal_features(X)
+        if self.mapping:
+            X = self._map_features(X)
+
+        self.max_ab = abnorms.max(axis=0)
+        abnorms = (abnorms - self.min_ab) / (self.max_ab - self.min_ab)
 
         self.min = X.min(axis=0)
         self.max = X.max(axis=0)
@@ -22,13 +32,19 @@ class Preprocessor:
             X = self._build_poly(X, poly_degree)
 
         N = X.shape[0]
-        X = np.hstack([np.ones((N,1)), X])
+        if self.all_features:
+            X = np.hstack([np.ones((N,1)), X, abnorms])
+        else:
+            X = np.hstack([np.ones((N,1)), X])
 
         return X
 
     def process_test(self, X):
-        X = self._remove_outlier_features()
-        X = self._map_features(X)
+        X, abnorms = self._remove_abnormal_features(X)
+        if self.mapping:
+            X = self._map_features(X)
+
+        abnorms = (abnorms - self.min_ab) / (self.max_ab - self.min_ab)
 
         X = (X - self.min) / (self.max - self.min)
 
@@ -36,15 +52,19 @@ class Preprocessor:
             X = self._build_poly(X, self.poly_degree)
 
         N = X.shape[0]
-        X = np.hstack([np.ones((N,1)), X])
+        if self.all_features:
+            X = np.hstack([np.ones((N,1)), X, abnorms])
+        else:
+            X = np.hstack([np.ones((N,1)), X])
 
         return X
 
     
-    def _remove_outlier_features(self, features):
-        anormal_cols = [0,4,5,6,12,23,24,25,26,27,28]
-        return np.delete(features, anormal_cols, axis=1)
-
+    def _remove_abnormal_features(self, features):
+        abnormal_cols = [0,4,5,6,12,23,24,25,26,27,28]
+        abnormal_features = features[:,abnormal_cols]
+        return np.delete(features, abnormal_cols, axis=1), abnormal_features
+  
 
     def _build_poly(self, features, degree):
         '''
