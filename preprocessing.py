@@ -82,11 +82,25 @@ class Preprocessor:
         assert degree > 0
         N,D = features.shape
         polys = np.zeros((N, degree*D))
+        cross2 = np.zeros((N, (D-1)*D//2))
+        cross3 = np.zeros((N, (D-1)*D))
 
         polys[:,:D] = features
         for i in range(1,degree):
             polys[:, i*D : (i+1)*D] = polys[:, (i-1)*D : i*D] * features
-        
+        idx = 0
+        for i in range(D):
+            for j in range(i+1,D):
+                cross2[:,idx] = features[:,i] * features[:,j]
+                idx += 1
+        for i in range(D):
+            for j in range(D):
+                if i == j:
+                    continue
+                cross3[:,i*(D-1) + j - int(j>i)] = features[:,j] * features[:,i]**2
+        print("#2:", cross2.shape)
+        print("#3:", cross3.shape)
+        polys = np.hstack([cross2, cross3, polys])
         return polys
 
 
