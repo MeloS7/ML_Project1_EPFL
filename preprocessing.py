@@ -98,8 +98,6 @@ class Preprocessor:
                 if i == j:
                     continue
                 cross3[:,i*(D-1) + j - int(j>i)] = features[:,j] * features[:,i]**2
-        print("#2:", cross2.shape)
-        print("#3:", cross3.shape)
         polys = np.hstack([cross2, cross3, polys])
         return polys
 

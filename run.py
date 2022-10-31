@@ -11,7 +11,7 @@ DATA_PATH = "./data/train.csv"
 TEST_PATH = "./data/test.csv"
 GAMMA = [1e-1, 1e-2, 1e-3, 5e-3, 1e-4]
 MAX_ITERS = 500
-LAMBDAS = np.logspace(-5, -1, 10)
+LAMBDAS = np.logspace(-20, -1, 10)
 K_FOLD = 10
 METHOD_SPLIT = ['ratio', 'k_fold']
 METHOD_TRAINING = ['mse_gd', 'ls', 'mse_sgd', 'rg', 'lr', 'lr_reg']
@@ -39,19 +39,25 @@ labels, features, ids = load_csv_data(DATA_PATH, sub_sample=False)
 if args['name'] == 'lr' or args['name'] == 'lr_reg':
     labels = 0.5 + labels / 2.
 
-# Extract test set from original data
-features_tr, features_te, label_tr, label_te = train_test_split(labels, features, RATIO_TEST, SEED)
-
-# Data preprocessing
 prep = Preprocessor()
-features_tr = prep.process_train(features_tr)
-features_te = prep.process_train(features_te)
+features_pp = prep.process_train(features, mapping=True, poly_degree=20)
+features_tr, features_te, labels_tr, labels_te = train_test_split(labels, features_pp, RATIO_TEST, SEED)
+
+# # Extract test set from original data
+# features_tr, features_te, label_tr, label_te = train_test_split(labels, features, RATIO_TEST, SEED)
+
+# # Data preprocessing
+# prep = Preprocessor()
+# features_tr = prep.process_train(features_tr, poly_degree = 9)
+# features_te = prep.process_test(features_te)
+# prep_all_features = Preprocessor()
+# features_pp = prep_all_features.process_train(features, mapping=True, poly_degree=9)
 
 # Split data into training set and validation set
 if args['crossValidation'] == 'ratio':
-    x_tr, x_val, y_tr, y_val = train_test_split(label_tr, features_tr, RATIO_VAL, SEED)
+    x_tr, x_val, y_tr, y_val = train_test_split(labels_tr, features_tr, RATIO_VAL, SEED)
 else:
-    x_tr, x_val, y_tr, y_val = kfold_split(label_tr, features_tr, K_FOLD, SEED)
+    x_tr, x_val, y_tr, y_val = kfold_split(labels_tr, features_tr, K_FOLD, SEED)
 
 # Training model
 # Initialization
@@ -85,7 +91,7 @@ if args['name'] == "mse_gd":
             gamma_opt = gamma
             acc_opt = acc_val
 
-        acc_te = accuracy_score(label_te, make_prediction(features_te @ w_opt))
+        acc_te = accuracy_score(labels_te, make_prediction(features_te @ w_opt))
         print(f"The best accuracy of {args['name']} on test set: {acc_te} with gamma:{gamma_opt}")
 
 # Mean square error with stochastic gradient descent
@@ -110,7 +116,7 @@ elif args['name'] == 'mse_sgd':
             gamma_opt = gamma
             acc_opt = acc_val
 
-        acc_te = accuracy_score(label_te, make_prediction(features_te @ w_opt))
+        acc_te = accuracy_score(labels_te, make_prediction(features_te @ w_opt))
         print(f"The best accuracy of {args['name']} on test set: {acc_te} with gamma:{gamma_opt}")
 
 # Least square with normal equations
@@ -121,15 +127,18 @@ elif args['name'] == 'ls':
     acc_val = accuracy_score(y_val, make_prediction(x_val @ w))
     w_opt = w
 
-    acc_te = accuracy_score(label_te, make_prediction(features_te @ w_opt))
+    acc_te = accuracy_score(labels_te, make_prediction(features_te @ w_opt))
     print(f"The best accuracy of {args['name']} on test set: {acc_te}")
+
+    # Training with all data
+    w_opt, loss = least_squares(labels, features_pp)
 
 # Ridge regression
 elif args['name'] == 'rg':
     mse = np.zeros((len(LAMBDAS), 2))
     lambda_opt = LAMBDAS[0]
     for i, lambda_ in enumerate(LAMBDAS):
-
+        # We use all datas rather than test dataset for training in Ridge Regression
         w, l_tr = ridge_regression(y_tr, x_tr, lambda_)
         l_te = compute_loss(y_val, x_val, w)
 
@@ -142,11 +151,16 @@ elif args['name'] == 'rg':
             lambda_opt = lambda_
             acc_opt = acc_val
 
-        print(f"lambda_: {lambda_:.6f} \ttrain: [loss={mse[i,0]:.5f}, acc={acc_tr:.5f}]\
+        print(f"lambda_: {lambda_:.8f} \ttrain: [loss={mse[i,0]:.5f}, acc={acc_tr:.5f}]\
             \ttest: [loss={mse[i,1]:.5f}, accuracy={acc_val:.5f}]")
     
-    acc_te = accuracy_score(label_te, make_prediction(features_te @ w_opt))
+    w_opt, loss = ridge_regression(labels_tr, features_tr, lambda_opt)
+    
+    acc_te = accuracy_score(labels_te, make_prediction(features_te @ w_opt))
+    # acc_te = accuracy_score(y_val, make_prediction(x_val @ w_opt))
     print(f"The best accuracy of {args['name']} on test set: {acc_te} with lambda:{lambda_opt}")
+
+    w_opt, loss = ridge_regression(labels, features_pp, lambda_opt)
 
 # Logistic regression with gradient descent
 elif args['name'] == 'lr':
@@ -172,7 +186,7 @@ elif args['name'] == 'lr':
             gamma_opt = gamma
             acc_opt = acc_val
 
-    acc_te = accuracy_score(label_te, make_prediction(sigmoid(features_te @ w_opt), logistic=True, zero_one=True))
+    acc_te = accuracy_score(labels_te, make_prediction(sigmoid(features_te @ w_opt), logistic=True, zero_one=True))
     print(f"The best accuracy of {args['name']} on test set: {acc_te} with gamma:{gamma_opt}")
 
 # Regularized logistic regression
@@ -199,7 +213,7 @@ else:
             gamma_opt = gamma
             acc_opt = acc_val
 
-    acc_te = accuracy_score(label_te, make_prediction(sigmoid(features_te @ w_opt), logistic=True, zero_one=True))
+    acc_te = accuracy_score(labels_te, make_prediction(sigmoid(features_te @ w_opt), logistic=True, zero_one=True))
     print(f"The best accuracy of {args['name']} on test set: {acc_te} with gamma:{gamma_opt}")
 
 
