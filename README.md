@@ -9,11 +9,11 @@ This is a project in CS-433 Machine Learning course at EPFL. The project impleme
 - Regularized Logistic Regression
 
 ## File structure
-In ./data, you can find a compressed file named "data_compressed.zip" which contains all training and test data.
-In ./, you can find a script *run.py*, which is to run the project.
-In ./, you can find a file *implementation.py*, which contains all methods we implemented.
-In ./, you can find a file preprocessing.py, which contains a class Preprocessor.
-In ./, you can find other files for pytest or submission.
+- In ./data, you can find a compressed file named "data_compressed.zip" which contains all training and test data.
+- In ./, you can find a script *run.py*, which is to run the project.
+- In ./, you can find a file *implementation.py*, which contains all methods we implemented.
+- In ./, you can find a file preprocessing.py, which contains a class Preprocessor.
+- In ./, you can find other files for pytest or submission.
 
 ## About the data
 The data is provided by ML Higgs on [AIcrowd](https://www.aicrowd.com/challenges/epfl-machine-learning-higgs/dataset_files).
@@ -27,9 +27,20 @@ There is a zip file that contains three of the following three csv files:
 ## Getting Started
 ### Prerequisites
 This is a list of required libraries that you need:
-- numpy
-- argparse
-- csv
+  - python=3.9
+  - numpy=1.23.1
+  - matplotlib=3.5.2
+  - seaborn=0.11.2
+  - scikit-learn=1.1.2
+  - pytest=7.1.2
+  - gitpython=3.1.18
+  - black=22.6.0
+  - pytest-mock=3.7.0
+
+You can use environment.yml to install them by
+```sh
+conda env create --file environment.yml --name env-name
+```
 
 ## Usage
 You can run this project by running the script run.py.
