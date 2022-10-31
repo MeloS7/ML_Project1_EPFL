@@ -82,7 +82,7 @@ def accuracy_score(ys, pred):
 
 def calculate_mse(e):
     """Calculate the mse for vector e."""
-    return 1 / 2 * np.mean(e ** 2)
+    return 1 / 2 * np.mean(e**2)
 
 
 def calculate_mae(e):
@@ -192,4 +192,4 @@ def kfold_split(y, x, k_fold, seed=42):
         y_train = y[k_indices[np.arange(k_indices.shape[0]) != k].reshape(-1)]
         x_test, y_test = x[k_indices[k]], y[k_indices[k]]
 
-    return x_train, x_test, y_train, y_test
+        yield x_train, x_test, y_train, y_test

@@ -151,7 +151,4 @@ def reg_logistic_regression(y, tx, lambda_, initial_w, max_iters, gamma):
         w -= gamma * grad
     loss = compute_loss_logistic(y, tx, w)
 
-    # print(grad)
-    print(loss)
-
     return w, loss
