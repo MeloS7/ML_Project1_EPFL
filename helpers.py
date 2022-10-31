@@ -3,8 +3,6 @@ import csv
 import numpy as np
 
 
-
-
 def load_csv_data(data_path, sub_sample=False):
     """Loads data and returns y (class labels), tX (features) and ids (event ids)"""
     y = np.genfromtxt(data_path, delimiter=",", skip_header=1, dtype=str, usecols=1)
@@ -32,7 +30,7 @@ def create_csv_submission(ids, y_pred, name):
                y_pred (predicted class labels)
                name (string name of .csv output file to be created)
     """
-    with open(name, "w", newline='') as csvfile:
+    with open(name, "w", newline="") as csvfile:
         fieldnames = ["Id", "Prediction"]
         writer = csv.DictWriter(csvfile, delimiter=",", fieldnames=fieldnames)
         writer.writeheader()
@@ -41,8 +39,8 @@ def create_csv_submission(ids, y_pred, name):
 
 
 def make_prediction(vals, logistic=False, zero_one=False):
-    '''
-    Convert outputs of linear regressions to their classes. 
+    """
+    Convert outputs of linear regressions to their classes.
     By default, negative values are assigned to -1 and positive to 1.
     If zero_one=True, respectively to 0 and 1.
     If logistic=True, boundary of two classes is 0.5 instead of 0.
@@ -51,10 +49,10 @@ def make_prediction(vals, logistic=False, zero_one=False):
         vals: numpy.ndarray of shape (N,)
         logistic: bool, if true, the separating boundary is 0.5 insad of 0.
         zero_one: bool, if True return in set {0,1}> By default in {-1,1}
-    
+
     Returns:
         pred: numpy.ndarray of shape (N,)
-    '''
+    """
     bound = 0
     if logistic:
         bound = 0.5
@@ -69,7 +67,7 @@ def make_prediction(vals, logistic=False, zero_one=False):
 
 
 def accuracy_score(ys, pred):
-    '''
+    """
     Calculate the accuracy of prediction given true labels
 
     Args:
@@ -78,13 +76,13 @@ def accuracy_score(ys, pred):
 
     Returns:
         acc: float, accuracy
-    '''
+    """
     return np.mean(ys == pred)
 
 
 def calculate_mse(e):
     """Calculate the mse for vector e."""
-    return 1 / 2 * np.mean(e ** 2)
+    return 1 / 2 * np.mean(e**2)
 
 
 def calculate_mae(e):
@@ -114,22 +112,25 @@ def compute_gradient(y, tx, w):
 def sigmoid(t):
     return 1.0 / (1 + np.exp(-t))
 
+
 def compute_gradient_logistic(y, tx, w):
-    return tx.T.dot(sigmoid(tx.dot(w))-y)/len(y)
+    return tx.T.dot(sigmoid(tx.dot(w)) - y) / len(y)
+
 
 def compute_loss_logistic(y, tx, w):
-    loss = np.sum(np.log(1+np.exp(tx.dot(w))) - y*tx.dot(w))/len(y)
+    loss = np.sum(np.log(1 + np.exp(tx.dot(w))) - y * tx.dot(w)) / len(y)
     return loss
+
 
 def compute_hessian(y, tx, w):
     pred = sigmoid(tx.dot(w))
     pred = np.diag(pred.T[0])
-    r = np.multiply(pred, (1-pred))
+    r = np.multiply(pred, (1 - pred))
     return tx.T.dot(r).dot(tx)
 
 
 def train_test_split(y, x, ratio, seed=42):
-    '''
+    """
     Split the dataset into training and test sets.
 
     Args:
@@ -143,7 +144,7 @@ def train_test_split(y, x, ratio, seed=42):
         x_te: numpy.ndarray containing the test data.
         y_tr: numpy.ndarray containing the train labels.
         y_te: numpy.ndarray containing the test labels.
-    '''
+    """
     # Set seed
     np.random.seed(seed)
 
@@ -156,24 +157,24 @@ def train_test_split(y, x, ratio, seed=42):
 
 
 def kfold_split(y, x, k_fold, seed=42):
-    '''
-    Generate data for train and test. 
+    """
+    Generate data for train and test.
     The daatset is spliit into k_fold subsamples. In the i-th value genarated,
     test set consists of data in the i-th subsample, training set consists of
-    the k-1 subsamples left. 
+    the k-1 subsamples left.
 
     Args:
         y: numpy.ndarray of shape (N,1)
         x: numpy.ndarray of shape (N,D)
         k_fold: fold number
         seed: the random seed
-    
+
     Yields:
         x_train: training data x for that split
         x_test:  training labels y for that split
         y_train: test data x for that split
         y_test:  test lqbels y for that split
-    '''
+    """
     # Set seed
     np.random.seed(seed)
 
@@ -181,9 +182,10 @@ def kfold_split(y, x, k_fold, seed=42):
     num_row = y.shape[0]
     interval = int(num_row / k_fold)
     indices = np.random.permutation(num_row)
-    k_indices = np.array([indices[k * interval: (k + 1) * interval]
-                 for k in range(k_fold)])
-    
+    k_indices = np.array(
+        [indices[k * interval : (k + 1) * interval] for k in range(k_fold)]
+    )
+
     # Split data by k_indices and k
     for k in range(k_fold):
         x_train = x[k_indices[np.arange(k_indices.shape[0]) != k].reshape(-1)]
@@ -191,4 +193,3 @@ def kfold_split(y, x, k_fold, seed=42):
         x_test, y_test = x[k_indices[k]], y[k_indices[k]]
 
     return x_train, x_test, y_train, y_test
-
